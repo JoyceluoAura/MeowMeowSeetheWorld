@@ -67,13 +67,14 @@ if run:
         hs_codes = [candidate.hs_code for candidate in hs_candidates]
 
         # 3) Load trade dataset (live API first, mock fallback).
-        raw_df, source_message, connection_attempts = load_trade_data_with_fallback(
+        raw_df, source_message = load_trade_data_with_fallback(
             equipment_name=equipment_name,
             hs_codes=hs_codes,
             country=country,
             start_year=start_year,
             end_year=end_year,
         )
+        connection_attempts = raw_df.attrs.get("connection_attempts", [])
 
         # 4) Clean and aggregate data.
         clean_df = clean_trade_data(raw_df)

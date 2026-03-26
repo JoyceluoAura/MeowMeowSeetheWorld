@@ -209,6 +209,24 @@ def fetch_trade_data_world_bank_macro(
     return df
 
 
+def fetch_trade_data(
+    hs_codes: Iterable[str],
+    country: Optional[str],
+    start_year: int,
+    end_year: int,
+    timeout_sec: int = 30,
+) -> pd.DataFrame:
+    """Backward-compatible wrapper using primary UN Comtrade endpoint."""
+    return fetch_trade_data_un_comtrade(
+        base_url=UN_COMTRADE_WB_BASE_URL,
+        hs_codes=hs_codes,
+        country=country,
+        start_year=start_year,
+        end_year=end_year,
+        timeout_sec=timeout_sec,
+    )
+
+
 def mock_trade_data(
     equipment_name: str,
     hs_code: str,
@@ -252,11 +270,11 @@ def load_trade_data_with_fallback(
     country: Optional[str],
     start_year: int,
     end_year: int,
-) -> tuple[pd.DataFrame, str, list[str]]:
+) -> tuple[pd.DataFrame, str]:
     """Try multiple live APIs first, then fallback to mock dataset.
 
     Returns:
-        (dataframe, chosen_source_message, connection_attempt_logs)
+        (dataframe, chosen_source_message)
     """
     hs_codes = list(hs_codes)
     if not hs_codes:
@@ -299,7 +317,8 @@ def load_trade_data_with_fallback(
         try:
             df = loader()
             attempts.append(f"✅ {name}: connected")
-            return df, f"Live data source: {name}", attempts
+            df.attrs["connection_attempts"] = attempts
+            return df, f"Live data source: {name}"
         except Exception as exc:
             attempts.append(f"❌ {name}: {exc.__class__.__name__}")
 
@@ -312,7 +331,8 @@ def load_trade_data_with_fallback(
         country=country,
     )
     attempts.append("⚠️ Mock data fallback activated")
-    return df, "Fallback source: Mock data (all live endpoints failed)", attempts
+    df.attrs["connection_attempts"] = attempts
+    return df, "Fallback source: Mock data (all live endpoints failed)"
 
 
 def default_year_range(last_n_years: int = 5) -> tuple[int, int]:
