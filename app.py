@@ -17,8 +17,53 @@ from trade_fetcher import default_year_range, load_trade_data_with_fallback
 # App configuration & title
 # -------------------------
 st.set_page_config(page_title="Equipment Trade Intelligence Tool", layout="wide")
-st.title("🔎 Equipment Trade Intelligence Tool")
+st.title("Equipment Trade Intelligence Tool")
 st.caption("Phase 1 MVP — Trade insights for industrial and scientific equipment")
+
+
+def apply_theme(mode: str) -> str:
+    """Apply a lightweight light/dark theme and return plotly template name."""
+    if mode == "Dark":
+        st.markdown(
+            """
+            <style>
+            .stApp {
+                background-color: #000000;
+                color: #f3f4f6;
+            }
+            [data-testid="stSidebar"] {
+                background-color: #111111;
+            }
+            h1, h2, h3, h4, h5, h6, p, label, span, div {
+                color: #f3f4f6;
+            }
+            [data-testid="stMarkdownContainer"] code {
+                color: #f3f4f6;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        return "plotly_dark"
+
+    st.markdown(
+        """
+        <style>
+        .stApp {
+            background-color: #ffffff;
+            color: #111827;
+        }
+        [data-testid="stSidebar"] {
+            background-color: #f9fafb;
+        }
+        h1, h2, h3, h4, h5, h6, p, label, span, div {
+            color: #111827;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    return "plotly_white"
 
 
 # -------------------------
@@ -29,6 +74,8 @@ current_year = datetime.utcnow().year
 
 with st.sidebar:
     st.header("Search Input")
+    theme_mode = st.selectbox("Theme", options=["Dark", "Light"], index=0)
+    plotly_template = apply_theme(theme_mode)
 
     equipment_name = st.text_input("Equipment Name *", placeholder="e.g., high-temperature kiln")
     brand = st.text_input("Brand (optional)", placeholder="e.g., Nabertherm")
@@ -121,6 +168,7 @@ if run:
         markers=True,
         title="Import / Export Value Over Time",
         labels={"trade_value_usd": "Trade Value (USD)", "year": "Year", "flow": "Flow"},
+        template=plotly_template,
     )
     st.plotly_chart(line_fig, use_container_width=True)
 
@@ -131,6 +179,7 @@ if run:
         y="trade_value_usd",
         title="Top Partner Countries by Trade Value",
         labels={"partner": "Partner Country", "trade_value_usd": "Total Trade Value (USD)"},
+        template=plotly_template,
     )
     st.plotly_chart(bar_fig, use_container_width=True)
 
